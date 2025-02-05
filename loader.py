@@ -40,9 +40,9 @@ def blob_to_edges(blob, id):
         return [],[]
 
     nodes = [
-        f'(def_{id}:node:{OFF_TECH}:{sanitize(def_tech_parent)} {{value: "{def_tech_parent}: {primary_node}"}})',
+        f'(def_{id}:node:{DEF_TECH}:{sanitize(def_tech_parent)} {{value: "{def_tech_parent}: {primary_node}"}})',
         f'(art_{id}:node:{ARTIFACT}:{sanitize(artifact_class)} {{value: "{artifact_class}: {artifact}"}})',
-        f'(off_{id}:node:{DEF_TECH}:{sanitize(off_tech_parent)} {{value: "{off_tech_parent}: {off_tech}", attack_id: "{off_tech_id}"}})',
+        f'(off_{id}:node:{OFF_TECH}:{sanitize(off_tech_parent)} {{value: "{off_tech_parent}: {off_tech}", attack_id: "{off_tech_id}"}})',
         f'(dt_{id}:node:{DEF_TAC} {{value: "{def_tactic}"}})',
         f'(ot_{id}:node:{OFF_TAC} {{value: "{off_tactic}"}})'
     ]
