@@ -2,12 +2,7 @@ import json
 from neo4j import GraphDatabase
 from tqdm import tqdm
 
-# Node types
-OFF_TECH = 'OFFENSIVE_TECHNIQUE'
-DEF_TECH = 'DEFENSIVE_TECHNIQUE'
-DEF_TAC = 'DEFENSIVE_TACTIC'
-OFF_TAC = 'OFFENSIVE_TACTIC'
-ARTIFACT = 'ARTIFACT'
+from schema import DEF_TAC, DEF_TECH, OFF_TAC, OFF_TECH, ARTIFACT, PARENT
 
 BUFF_SIZE = 10
 
@@ -33,6 +28,7 @@ def blob_to_edges(blob, id):
     off_tech_id = blob['off_tech_id']['value']
     off_tech_parent = blob['off_tech_parent_label']['value']
     off_tactic = blob['off_tactic_label']['value']
+    off_tactic_id = blob['off_tactic']['value'].split("#")[-1]
     off_tactic_rel = blob['off_tactic_rel_label']['value']
 
     # Only add edges for fine-grained nodes
@@ -40,19 +36,34 @@ def blob_to_edges(blob, id):
         return [],[]
 
     nodes = [
-        f'(def_{id}:node:{DEF_TECH}:{sanitize(def_tech_parent)} {{value: "{def_tech_parent}: {primary_node}"}})',
-        f'(art_{id}:node:{ARTIFACT}:{sanitize(artifact_class)} {{value: "{artifact_class}: {artifact}"}})',
-        f'(off_{id}:node:{OFF_TECH}:{sanitize(off_tech_parent)} {{value: "{off_tech_parent}: {off_tech}", attack_id: "{off_tech_id}"}})',
+        f'(def_{id}:node:{DEF_TECH} {{value: "{primary_node}"}})',
+        f'(art_{id}:node:{ARTIFACT} {{value: "{artifact}"}})',
+        f'(off_{id}:node:{OFF_TECH} {{value: "{off_tech_id}", description: "{off_tech}"}})',
         f'(dt_{id}:node:{DEF_TAC} {{value: "{def_tactic}"}})',
-        f'(ot_{id}:node:{OFF_TAC} {{value: "{off_tactic}"}})'
+        f'(ot_{id}:node:{OFF_TAC} {{value: "{off_tactic_id}", description: "{off_tactic}"}})'
     ]
 
     edges = [
         f'(def_{id}) -[:{sanitize(def_artifact_rel)}]- (art_{id})',
         f'(off_{id}) -[:{sanitize(off_artifact_rel)}]- (art_{id})',
-        f'(dt_{id}) -[:{sanitize(def_tactic_rel)}]- (def_{id})',
-        f'(ot_{id}) -[:{sanitize(off_tactic_rel)}]- (off_{id})'
+        f'(dt_{id}) <-[:{sanitize(def_tactic_rel)}]- (def_{id})',
+        f'(ot_{id}) <-[:{sanitize(off_tactic_rel)}]- (off_{id})'
     ]
+
+    if def_tech_parent != primary_node:
+        nodes.append(f'(dt_parent_{id}:node:{DEF_TECH} {{value: "{def_tech_parent}"}})')
+        edges.append(f'(dt_parent_{id}) -[:{PARENT}]-> (def_{id})')
+
+    if off_tech_parent != off_tech:
+        if '.' in off_tech_id:
+            nodes.append(f'(ot_parent_{id}:node:{OFF_TECH} {{value: "{off_tech_id.split(".")[0]}", description: "{off_tech_parent}"}})')
+        else:
+            nodes.append(f'(ot_parent_{id}:node:{OFF_TECH} {{value: "{off_tech_parent}", top_level: "True"}})')
+
+        edges.append(f'(ot_parent_{id}) -[:{PARENT}]-> (off_{id})')
+    if artifact_class != artifact:
+        nodes.append(f'(art_parent_{id}:node:{ARTIFACT} {{value: "{artifact_class}"}})')
+        edges.append(f'(art_parent_{id}) -[:{PARENT}]-> (art_{id})')
 
     return nodes,edges
 
@@ -68,17 +79,28 @@ def populate_db():
     ]
     [driver.execute_query(q, database_='neo4j') for q in queries]
 
-    nodes,edges = [],[]
-    for i in tqdm(range(len(db))):
-        n,e = blob_to_edges(db[i], i % BUFF_SIZE)
-        nodes += n; edges += e
+    try:
+        nodes,edges = [],[]
+        for i in tqdm(range(len(db))):
+            n,e = blob_to_edges(db[i], i % BUFF_SIZE)
+            nodes += n; edges += e
 
-        if i % BUFF_SIZE and i and edges:
+            if (i % BUFF_SIZE == BUFF_SIZE-1) and edges:
+                n_query = '\n'.join([f'MERGE {n}' for n in nodes])
+                e_query = '\n'.join([f'MERGE {e}' for e in edges])
+                query = n_query + '\n' + e_query + ';'
+
+                driver.execute_query(query, database_='neo4j')
+                nodes,edges = [],[]
+
+        if edges:
             n_query = '\n'.join([f'MERGE {n}' for n in nodes])
             e_query = '\n'.join([f'MERGE {e}' for e in edges])
             query = n_query + '\n' + e_query + ';'
 
             driver.execute_query(query, database_='neo4j')
             nodes,edges = [],[]
+    finally:
+        driver.close()
 
 populate_db()
