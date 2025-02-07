@@ -27,6 +27,7 @@ def loads_nodes(driver):
             labels = f'node:{sheet_to_type[sn]}'
             uuid = row.ID.upper()
             name = row.name
+
             idx = row.Index
 
             if sn == 'techniques':
@@ -35,6 +36,7 @@ def loads_nodes(driver):
             if sn == 'software':
                 # Tool or malware
                 labels += f':{row.type}'
+                name = name.upper() # So we can match w OTX easier
 
             nodes.append(
                 (f'(n{idx}:{labels} {{value: "{uuid}"}})', name, idx)
