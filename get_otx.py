@@ -81,6 +81,17 @@ def add_event(event, driver, aliases):
 
     if malware:
         malware = [m.upper() for m in malware]
+        new_malware = []
+        for m in malware:
+            # Some weird corner cases
+            if m == 'CUBA':
+                new_malware.append('CUBA-RANSOMWARE')
+            elif m == 'EMAIL' or m == 'URL':
+                continue
+            else:
+                new_malware.append(m)
+
+        malware = new_malware
         malware_nodes, malware_edges, offset = add_list_of_nodes(
             malware, f'{MALWARE}:{SOFTWARE}', ATTACKER_USED, offset=offset
         )
