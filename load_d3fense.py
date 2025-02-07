@@ -36,34 +36,34 @@ def blob_to_edges(blob, id):
         return [],[]
 
     nodes = [
-        f'(def_{id}:node:{DEF_TECH} {{value: "{primary_node}"}})',
-        f'(art_{id}:node:{ARTIFACT} {{value: "{artifact}"}})',
-        f'(off_{id}:node:{OFF_TECH} {{value: "{off_tech_id}", description: "{off_tech}"}})',
-        f'(dt_{id}:node:{DEF_TAC} {{value: "{def_tactic}"}})',
-        f'(ot_{id}:node:{OFF_TAC} {{value: "{off_tactic_id}", description: "{off_tactic}"}})'
+        f'(def_{id}:node:{DEF_TECH} {{value: "{primary_node.upper()}", src: "d3fense"}})',
+        f'(art_{id}:node:{ARTIFACT} {{value: "{artifact.upper()}", src: "d3fense"}})',
+        f'(off_{id}:node:{OFF_TECH} {{value: "{off_tech_id.upper()}", description: "{off_tech}", src: "d3fense"}})',
+        f'(dt_{id}:node:{DEF_TAC} {{value: "{def_tactic.upper()}", src: "d3fense"}})',
+        f'(ot_{id}:node:{OFF_TAC} {{value: "{off_tactic_id.upper()}", description: "{off_tactic}", src: "d3fense"}})'
     ]
 
     edges = [
-        f'(def_{id}) -[:{sanitize(def_artifact_rel)}]- (art_{id})',
-        f'(off_{id}) -[:{sanitize(off_artifact_rel)}]- (art_{id})',
-        f'(dt_{id}) <-[:{sanitize(def_tactic_rel)}]- (def_{id})',
-        f'(ot_{id}) <-[:{sanitize(off_tactic_rel)}]- (off_{id})'
+        f'(def_{id}) -[:{sanitize(def_artifact_rel)} {{src: "d3fense"}}]- (art_{id})',
+        f'(off_{id}) -[:{sanitize(off_artifact_rel)} {{src: "d3fense"}}]- (art_{id})',
+        f'(dt_{id}) <-[:{sanitize(def_tactic_rel)} {{src: "d3fense"}}]- (def_{id})',
+        f'(ot_{id}) <-[:{sanitize(off_tactic_rel)} {{src: "d3fense"}}]- (off_{id})'
     ]
 
     if def_tech_parent != primary_node:
-        nodes.append(f'(dt_parent_{id}:node:{DEF_TECH} {{value: "{def_tech_parent}"}})')
-        edges.append(f'(dt_parent_{id}) -[:{PARENT}]-> (def_{id})')
+        nodes.append(f'(dt_parent_{id}:node:{DEF_TECH} {{value: "{def_tech_parent.upper()}", src: "d3fense"}})')
+        edges.append(f'(dt_parent_{id}) -[:{PARENT} {{src: "d3fense"}}]-> (def_{id})')
 
     if off_tech_parent != off_tech:
         if '.' in off_tech_id:
-            nodes.append(f'(ot_parent_{id}:node:{OFF_TECH} {{value: "{off_tech_id.split(".")[0]}", description: "{off_tech_parent}"}})')
+            nodes.append(f'(ot_parent_{id}:node:{OFF_TECH} {{value: "{off_tech_id.split(".")[0].upper()}", description: "{off_tech_parent}", src: "d3fense"}})')
         else:
-            nodes.append(f'(ot_parent_{id}:node:{OFF_TECH} {{value: "{off_tech_parent}", top_level: "True"}})')
+            nodes.append(f'(ot_parent_{id}:node:{OFF_TECH} {{value: "{off_tech_parent.upper()}", top_level: "True", src: "d3fense"}})')
 
-        edges.append(f'(ot_parent_{id}) -[:{PARENT}]-> (off_{id})')
+        edges.append(f'(ot_parent_{id}) -[:{PARENT} {{src: "d3fense"}}]-> (off_{id})')
     if artifact_class != artifact:
-        nodes.append(f'(art_parent_{id}:node:{ARTIFACT} {{value: "{artifact_class}"}})')
-        edges.append(f'(art_parent_{id}) -[:{PARENT}]-> (art_{id})')
+        nodes.append(f'(art_parent_{id}:node:{ARTIFACT} {{value: "{artifact_class.upper()}", src: "d3fense"}})')
+        edges.append(f'(art_parent_{id}) -[:{PARENT} {{src: "d3fense"}}]-> (art_{id})')
 
     return nodes,edges
 
@@ -103,4 +103,5 @@ def populate_db():
     finally:
         driver.close()
 
-populate_db()
+if __name__ == '__main__':
+    populate_db()

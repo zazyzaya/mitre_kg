@@ -1,5 +1,6 @@
 # Relation types
 PARENT = 'PARENT_CLASS_OF'
+TARGETS_COUNTRY = 'TARGETS_COUNTRY'
 
 # Node types
 OFF_TECH = 'OFFENSIVE_TECHNIQUE'
@@ -10,3 +11,8 @@ ARTIFACT = 'ARTIFACT'
 SOFTWARE = 'SOFTWARE'
 GROUP = 'THREAT_GROUP'
 CAMPAIGN = 'CAMPAIGN'
+EVENT = 'EVENT' # Different from campaign; single attack, usually a CTI report
+MALWARE = 'malware'
+ATTACKER_USED = 'ATTACKER_USED'
+COUNTRY = 'COUNTRY'
+ATTRIBUTED_TO = 'attributed_to'
