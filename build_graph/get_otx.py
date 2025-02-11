@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from api_keys import OTX_API
 from schema import *
-from load_attack import get_aliases
+from load_attack import get_aliases, get_malware_mapping
 
 DATA_DIR = '/mnt/raid1_ssd_4tb/datasets/mitre_kg/otx_pulses'
 
@@ -52,7 +52,7 @@ def add_list_of_nodes(ls, nodetype, rel_type, offset=0):
 
     return '\n'.join(nodes), '\n'.join(edges), offset+i+1
 
-def add_event(event, driver, aliases):
+def add_event(event, driver, apt_aliases, malware_aliases):
     value = event['id']
     description = sanitize(event['name'])
     apt = event['adversary']
@@ -83,6 +83,10 @@ def add_event(event, driver, aliases):
         malware = [m.upper() for m in malware]
         new_malware = []
         for m in malware:
+            if (mid := malware_aliases.get(m.upper())):
+                new_malware.append(mid)
+                continue
+
             # Some weird corner cases
             if m == 'CUBA':
                 new_malware.append('CUBA-RANSOMWARE')
@@ -93,11 +97,11 @@ def add_event(event, driver, aliases):
 
         malware = new_malware
         malware_nodes, malware_edges, offset = add_list_of_nodes(
-            malware, f'{MALWARE}:{SOFTWARE}', ATTACKER_USED, offset=offset
+            malware, f'{SOFTWARE}', ATTACKER_USED, offset=offset
         )
         query += malware_nodes + '\n' + malware_edges
 
-    if apt and (nid := aliases.get(apt.lower())):
+    if apt and (nid := apt_aliases.get(apt.upper())):
         query += f'''
             MERGE (apt:node:{GROUP} {{value: "{nid}"}})
                 ON CREATE SET apt.src = "otx", apt.description = "{nid}"
@@ -115,10 +119,11 @@ def add_event(event, driver, aliases):
 
 if __name__ == '__main__':
     driver = GraphDatabase.driver('neo4j://gemini0.ece.seas.gwu.edu/')
-    aliases = get_aliases()
+    apt_aliases = get_aliases()
+    mw_aliases = get_malware_mapping()
 
     events = glob.glob(DATA_DIR + '/*.json')
     for e in tqdm(events):
         with open(e, 'r') as f:
             db = json.load(f)
-            add_event(db, driver, aliases)
+            add_event(db, driver, apt_aliases, mw_aliases)

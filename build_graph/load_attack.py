@@ -10,6 +10,8 @@ EXCEL_FILE = '/mnt/raid1_ssd_4tb/datasets/mitre_kg/enterprise-attack-v16.1.xlsx'
 NODE_SHEETS = ['techniques', 'tactics', 'software', 'groups', 'campaigns']
 REL_SHEET = 'relationships'
 
+# TODO add aliases for groups and software
+
 sheet_to_type = {
     'techniques': OFF_TECH,
     'tactics': OFF_TAC,
@@ -79,12 +81,12 @@ def get_aliases():
     df = pd.read_excel(EXCEL_FILE, sheet_name='groups')
     for row in df.itertuples():
         nid = row.ID
-        aliases = [row.name.lower()]
+        aliases = [row.name.upper()]
 
-        if isinstance(row, str):
+        if isinstance(row[11], str):
             others = row[11]
             others = others.split(', ')
-            others = [o.lower() for o in others]
+            others = [o.upper() for o in others]
         else:
             others = []
 
@@ -93,6 +95,23 @@ def get_aliases():
             alias_dict[alias] = nid
 
     return alias_dict
+
+def get_malware_mapping():
+    mw_dict = dict()
+    df = pd.read_excel(EXCEL_FILE, sheet_name='software')
+    for row in df.itertuples():
+        mw_id = row.ID
+
+        names = [row.name]
+        if isinstance(row.aliases, str):
+            aliases = row.aliases
+            aliases = aliases.split(', ')
+            names += [a.upper() for a  in aliases]
+
+        for n in names:
+            mw_dict[n] = mw_id
+
+    return mw_dict
 
 if __name__ == '__main__':
     driver = GraphDatabase.driver('neo4j://gemini0.ece.seas.gwu.edu/')
