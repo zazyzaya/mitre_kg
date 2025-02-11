@@ -22,6 +22,7 @@ IGNORE = ['node']
 def build_nodes(driver: Driver):
     nmap = dict()
     names = []
+    uuids = []
     x = []
 
     q = 'MATCH (n) return n.value as value, LABELS(n) as labels, n.description as desc'
@@ -34,6 +35,7 @@ def build_nodes(driver: Driver):
 
         nmap[val] = i
         names.append(desc)
+        uuids.append(val)
         vector = [0.] * len(LABELS)
         for l in labels:
             if l not in IGNORE:
@@ -41,7 +43,7 @@ def build_nodes(driver: Driver):
 
         x.append(vector)
 
-    return torch.tensor(x), nmap, names
+    return torch.tensor(x), nmap, names, uuids
 
 def build_edges(driver: Driver, nmap: dict):
     q = 'MATCH (u) -- (v) return u.value as u, v.value as v'
@@ -61,14 +63,14 @@ def build_edges(driver: Driver, nmap: dict):
 if __name__ == '__main__':
     driver = GraphDatabase.driver('neo4j://gemini0.ece.seas.gwu.edu/')
     try:
-        x, nmap, names = build_nodes(driver)
+        x, nmap, names, uuids = build_nodes(driver)
         ei = build_edges(driver, nmap)
     finally:
         driver.close()
 
     torch.save(
         Data(
-            x=x, edge_index=ei, node_names=names
+            x=x, edge_index=ei, node_names=names, nids=uuids
         ),
-        'kg.pt'
+        '../kg.pt'
     )

@@ -1,2 +1,3 @@
 __pycache__/
 build_graph/api_keys.py
+build_graph/otx_pulses/

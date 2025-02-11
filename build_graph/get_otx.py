@@ -118,6 +118,7 @@ def add_event(event, driver, apt_aliases, malware_aliases):
         exit()
 
 if __name__ == '__main__':
+    '''
     driver = GraphDatabase.driver('neo4j://gemini0.ece.seas.gwu.edu/')
     apt_aliases = get_aliases()
     mw_aliases = get_malware_mapping()
@@ -127,3 +128,5 @@ if __name__ == '__main__':
         with open(e, 'r') as f:
             db = json.load(f)
             add_event(db, driver, apt_aliases, mw_aliases)
+    '''
+    build_dataset()
